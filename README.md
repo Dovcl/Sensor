@@ -45,6 +45,7 @@ DATA:WATER_LEVEL:RAINFALL:RISK_LEVEL
 
 
 ### 센서 기반 기본 위험도
+
 | 물 높이 |   의미   | 기본 위험도 |
 
 --------------------------------
@@ -59,6 +60,7 @@ DATA:WATER_LEVEL:RAINFALL:RISK_LEVEL
 
 ### 강수량 기준
 차수벽 있기 때문에 30mm/h까지는 영향이 없도로 했음.
+
 | 강수량 |   분류   | 영향 |
 
 --------------------------------
@@ -93,10 +95,15 @@ DATA:WATER_LEVEL:RAINFALL:RISK_LEVEL
 - 차수벽으로 인해 조정 하지 않음(1차적으로 막아줄 것이기 때문)
 
 ### 위험도 레벨
+
 | 레벨 | 의미 | 조치 |
+
 | SAFE | 안전 | 정상 운영 |
+
 | CAUTION | 주의 | 모니터링 강화 |
+
 | DANGER | 위험 | 즉시 대피 |
+
 
 
 ### 1. 설치 및 실행
@@ -134,9 +141,13 @@ q 엔터
 OLED 디스플레이에 아래와 같은 정보가 표시됨.
 
 WATER: YELLOW          # 물 높이 레벨
+
 RAIN: 100.0mm/h        # 현재 강수량
+
 RISK: DANGER           # 위험도
+
 G:ON Y:ON R:OFF        # 센서 상태
+
 Update: 2s ago         # 마지막 업데이트 시간
 
 ### 로그 출력
@@ -147,8 +158,11 @@ Update: 2s ago         # 마지막 업데이트 시간
 
 [상태] 물 높이: NONE, 강수량: 0.0mm/h, 위험도: SAFE  (10초마다)
 
+
 [센서] G:True Y:False R:False → 변경 감지
+
 [센서 변경] 물 높이: GREEN, 강수량: 0.0mm/h, 위험도: CAUTION
+
 
 [기상청 갱신] 물 높이: GREEN, 강수량: 5.0mm/h, 위험도: CAUTION
 
