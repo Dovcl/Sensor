@@ -106,7 +106,7 @@ void loop(){
   reedState2 = digitalRead(reedPin2);
   reedState3 = digitalRead(reedPin3);
 
-  // ===== 리드스위치1 (GREEN) =====
+  // 리드스위치1 (GREEN)
   if (prevState1 == HIGH && reedState1 == LOW) {
     // 자석 붙는 순간 → 토글
     led1On = !led1On;
@@ -114,7 +114,7 @@ void loop(){
     Serial.println(led1On ? "led green ON" : "led green OFF");
   }
 
-  // ===== 리드스위치2 (YELLOW) =====
+  // 리드스위치2 (YELLOW)
   if (prevState2 == HIGH && reedState2 == LOW) {
     // 자석 붙는 순간 → 토글
     led2On = !led2On;
@@ -122,7 +122,7 @@ void loop(){
     Serial.println(led2On ? "led yellow ON" : "led yellow OFF");
   }
 
-  // ===== 리드스위치3 (RED) =====
+  // 리드스위치3 (RED)
   if (prevState3 == HIGH && reedState3 == LOW) {
     // 자석 붙는 순간 → 토글
     led3On = !led3On;
