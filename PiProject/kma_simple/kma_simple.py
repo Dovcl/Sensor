@@ -433,9 +433,9 @@ if __name__ == "__main__":
                 risk_level = calculate_risk_level(water_level, rainfall)
                 
                 if update_reason == "기상청 갱신":
-                    print(f"[🌧️ 기상청 갱신] 물 높이: {water_level}, 강수량: {rainfall:.1f}mm/h, 위험도: {risk_level}")
+                    print(f"[기상청 갱신] 물 높이: {water_level}, 강수량: {rainfall:.1f}mm/h, 위험도: {risk_level}")
                 elif update_reason == "센서 변경":
-                    print(f"[⚠️ 센서 변경] 물 높이: {water_level}, 강수량: {rainfall:.1f}mm/h, 위험도: {risk_level}")
+                    print(f"[센서 변경] 물 높이: {water_level}, 강수량: {rainfall:.1f}mm/h, 위험도: {risk_level}")
                 elif update_reason == "주기적 업데이트":
                     # 10초마다 상태 출력
                     print(f"[상태] 물 높이: {water_level}, 강수량: {rainfall:.1f}mm/h, 위험도: {risk_level}")
