@@ -4,7 +4,7 @@ from urllib3.util.retry import Retry
 import serial
 import serial.tools.list_ports
 
-API_KEY = "R+Lu4UYCdVMewCu83nOCLox/2Hyf22H6s5uX6NqbS6Lsyersc2IHiw/NlQdR/NbM9i0NRVCIXS+afq6Ta9i0ag=="
+API_KEY = "API_KEY you've received"
 NX, NY = 61, 127
 LOG = "nowcast_log.csv"
 
@@ -20,9 +20,7 @@ sensor_initialized = False  # 센서 초기화 여부
 last_sensor_status_time = 0  # 마지막 센서 상태 출력 시간
 
 
-# --------------------------
 #   종료 입력 처리 스레드
-# --------------------------
 def keyboard_listener():
     global stop_flag
     while True:
@@ -33,9 +31,7 @@ def keyboard_listener():
             break
 
 
-# --------------------------
-#   발표시각 계산
-# --------------------------
+# 발표시각 계산
 def latest_base_datetime():
     now = dt.datetime.now()
     base = now - dt.timedelta(minutes=40)
@@ -45,9 +41,7 @@ def latest_base_datetime():
     return base_date, base_time
 
 
-# --------------------------
-#   세션
-# --------------------------
+# 세션
 def get_session():
     s = requests.Session()
     retries = Retry(
@@ -61,12 +55,10 @@ def get_session():
     return s
 
 
-# --------------------------
-#   API 호출
-# --------------------------
+# API 호출
 def get_nowcast():
     base_date, base_time = latest_base_datetime()
-    url = "https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst"
+    url = ""
     params = {
         "serviceKey": API_KEY,
         "pageNo": "1",
@@ -101,9 +93,7 @@ def get_nowcast():
     }
 
 
-# --------------------------
 #   CSV 저장
-# --------------------------
 def save_csv(row):
     newfile = not os.path.exists(LOG) or os.path.getsize(LOG) == 0
 
@@ -133,9 +123,7 @@ def save_csv(row):
         return row2
 
 
-# --------------------------
-#   CSV에서 최신 강수량 읽기
-# --------------------------
+# CSV에서 최신 강수량 읽어야함
 def get_latest_rainfall():
     """CSV 파일에서 가장 최근의 1시간 강수량을 읽어옴"""
     if not os.path.exists(LOG) or os.path.getsize(LOG) == 0:
@@ -160,11 +148,9 @@ def get_latest_rainfall():
         return 0.0
 
 
-# --------------------------
 #   물 높이 레벨 판단
-# --------------------------
 def get_water_level():
-    """센서 상태를 기반으로 물 높이 레벨 반환"""
+    """센서 상태를 기반으로 물 높이 반환"""
     if sensor_red:
         return "RED"
     elif sensor_yellow:
@@ -175,12 +161,14 @@ def get_water_level():
         return "NONE"
 
 
-# --------------------------
-#   위험도 분석 로직
-# --------------------------
+
+# 위험도 분석 로직
 def calculate_risk_level(water_level, rainfall):
     """
-    센서를 우선 기준으로 위험도 결정, 강수량은 보조 지표로 사용
+    구현 해야할 목록
+
+    <대전제>
+    센서를 우선 기준으로 위험도 결정 + 강수량은 보조 지표로 사용
     
     센서 의미:
     - GREEN: 발목 정도 물이 찼음 (초기 경고)
@@ -195,15 +183,17 @@ def calculate_risk_level(water_level, rainfall):
     
     로직:
     1. 센서 상태로 기본 위험도 결정
-    2. 강수량이 극한 호우(100mm/h 이상)면 위험도 1단계 상향
-    3. 강수량이 많으면(50-100mm/h) 위험도 0.5단계 상향
+    2. 차수벽이 있어서 30mm/h까지는 영향 없음
+    3. 30-50mm/h: 위험도 1단계 상향 (CAUTION → WARNING)
+    4. 50-100mm/h: 위험도 1단계 상향 (CAUTION → WARNING, WARNING → DANGER)
+    5. 100mm/h 이상: 위험도 2단계 상향 (CAUTION → DANGER, WARNING → DANGER)
     """
     # 강수량 기준 (mm/h)
-    RAIN_EXTREME = 100.0  # 100mm/h 이상: 극한 호우
-    RAIN_HEAVY = 50.0     # 50-100mm/h: 매우 많은 비
-    RAIN_MEDIUM = 30.0    # 30-50mm/h: 많은 비
-    RAIN_LOW = 10.0       # 10-30mm/h: 보통 비
-    # 10mm/h 미만: 적은 비
+    # 차수벽이 있어서 30mm/h까지는 영향 없음
+    RAIN_EXTREME = 100.0  # 100mm/h 이상: 극한 호우 (2단계 상승)
+    RAIN_HEAVY = 50.0     # 50-100mm/h: 매우 많은 비 (1단계 상승)
+    RAIN_MEDIUM = 30.0    # 30-50mm/h: 많은 비 (1단계 상승)
+    # 30mm/h 미만: 차수벽으로 인해서 영향 없음
     
     # 1단계: 센서 기반 기본 위험도 결정
     base_risk = "SAFE"
@@ -222,27 +212,23 @@ def calculate_risk_level(water_level, rainfall):
     current_index = risk_levels.index(base_risk)
     
     if rainfall >= RAIN_EXTREME:
-        # 극한 호우: 위험도 1단계 상향 (최대 DANGER까지)
-        current_index = min(current_index + 1, len(risk_levels) - 1)
+        # 극한 호우: 위험도 2단계 상향 (최대 DANGER까지)
+        # 예: CAUTION → DANGER, WARNING → DANGER
+        current_index = min(current_index + 2, len(risk_levels) - 1)
     elif rainfall >= RAIN_HEAVY:
-        # 매우 많은 비: 위험도 0.5단계 상향 (WARNING 이상이면 DANGER로)
-        if base_risk == "WARNING":
-            current_index = len(risk_levels) - 1  # DANGER
-        elif base_risk == "CAUTION":
-            current_index = min(current_index + 1, len(risk_levels) - 1)  # WARNING
-        # SAFE나 DANGER는 그대로
+        # 매우 많은 비 (50-100mm/h): 위험도 1단계 상향
+        # 예: CAUTION → WARNING, WARNING → DANGER
+        current_index = min(current_index + 1, len(risk_levels) - 1)
     elif rainfall >= RAIN_MEDIUM:
-        # 많은 비: 약간 상향 (CAUTION → WARNING, WARNING은 그대로)
-        if base_risk == "CAUTION":
-            current_index = min(current_index + 1, len(risk_levels) - 1)  # WARNING
-    # 30mm/h 미만은 센서 기반 위험도 그대로 유지
+        # 많은 비 (30-50mm/h): 위험도 1단계 상향
+        # 예: CAUTION → WARNING, WARNING → DANGER
+        current_index = min(current_index + 1, len(risk_levels) - 1)
+    # 30mm/h 미만은 차수벽으로 영향 없음 (센서 기반 위험도 그대로 유지)
     
     return risk_levels[current_index]
 
 
-# --------------------------
-#   아두이노 시리얼 통신 초기화
-# --------------------------
+# 아두이노 시리얼 통신 초기화
 def init_arduino():
     """아두이노 시리얼 포트 찾기 및 연결"""
     global arduino_serial, arduino_port
@@ -303,9 +289,7 @@ def init_arduino():
     return False
 
 
-# --------------------------
-#   아두이노로부터 센서 데이터 읽기
-# --------------------------
+# 아두이노로부터 센서 데이터 읽기
 def read_arduino_sensors():
     """아두이노로부터 센서 상태 읽기"""
     global sensor_green, sensor_yellow, sensor_red
@@ -348,9 +332,7 @@ def read_arduino_sensors():
         return False
 
 
-# --------------------------
-#   아두이노로 위험도 데이터 전송
-# --------------------------
+# 아두이노로 위험도 데이터 전송
 def send_risk_data_to_arduino(water_level, rainfall, risk_level):
     """아두이노로 위험도 정보 전송"""
     if arduino_serial is None or not arduino_serial.is_open:
@@ -367,9 +349,7 @@ def send_risk_data_to_arduino(water_level, rainfall, risk_level):
         print(f"[ERROR] 아두이노 전송 실패: {e}")
 
 
-# --------------------------
 #   메인 루프
-# --------------------------
 if __name__ == "__main__":
     print("=== 지하주차장 침수 센서 시스템 시작 ===")
     print("종료하려면 q 입력 후 엔터\n")
@@ -431,9 +411,9 @@ if __name__ == "__main__":
                 sensor_check_count = 0
 
             # 위험도 분석 및 아두이노 전송
-            # - 기상청 예보 시각이 갱신되면 즉시 업데이트
-            # - 센서 상태가 변경되면 즉시 업데이트
-            # - 그 외에는 10초마다 업데이트 (상태 출력과 동기화)
+            # 기상청 예보 시각이 갱신되면 즉시 업데이트
+            # 센서 상태가 변경되면 즉시 업데이트
+            # 그 외에는 10초마다 업데이트 (상태 출력과 동기화)
             should_update = False
             update_reason = ""
             
